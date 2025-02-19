@@ -1,7 +1,7 @@
 // content.js
 document.addEventListener("focusin", async (event) => {
   // Make sure textarea is focused
-  if (!event.target.tagName.toLowerCase() === "textarea") return;
+  if (event.target.tagName.toLowerCase() !== "textarea") return;
 
   // Get the textarea value
   const textarea = event.target;
@@ -9,12 +9,7 @@ document.addEventListener("focusin", async (event) => {
   const context = []; // TODO: get the context of the textarea
   // Get the autocomplete suggestions
   const suggestion = await getAutocompleteSuggestion(value, context);
-  const ghostText = getGhostText(suggestion, getTextFormat(textarea));
-  ghostText.style.position = "absolute";
-  ghostText.style.top = textarea.offsetTop + "px";
-  ghostText.style.left = textarea.offsetLeft + "px";
-  ghostText.style.pointerEvents = "none";
-  ghostText.style.whiteSpace = "pre-wrap";
+  const ghostText = createGhostText(value, suggestion, textarea);
   textarea.parentElement.appendChild(ghostText);
 });
 
@@ -24,25 +19,32 @@ async function getAutocompleteSuggestion(value, context) {
   return suggestion;
 }
 
-function getGhostText(text, orginalTextFormat) {
+function createGhostText(text, suggestion, textElement) {
   const ghostText = document.createElement("div");
-  ghostText.textContent = text;
-  ghostColor = "rgba(0, 0, 0, 0.5)"; // TODO: make it a blunter shade of the text color
-  ghostText.style.color = ghostColor;
-  ghostText.style.fontWeight = orginalTextFormat.fontWeight;
-  ghostText.style.fontSize = orginalTextFormat.fontSize;
-  ghostText.style.fontFamily = orginalTextFormat.fontFamily;
-  ghostText.style.textDecoration = orginalTextFormat.textDecoration;
-  return ghostText;
-}
+  ghostText.textContent = text + " " + suggestion;
 
-function getTextFormat(element) {
-  return {
-    fontColor: element.style.color,
-    fontWeight: element.style.fontWeight,
-    fontSize: element.style.fontSize,
-    fontFamily: element.style.fontFamily,
-    textDecoration: element.style.textDecoration,
-    fontOpacity: element.style.opacity,
+  const computedStyle = window.getComputedStyle(textElement);
+  const styles = {
+    // Mimic the text element
+    color: computedStyle.color,
+    opacity: computedStyle.opacity * 0.5,
+    fontWeight: computedStyle.fontWeight,
+    fontSize: computedStyle.fontSize,
+    fontFamily: computedStyle.fontFamily,
+    textDecoration: computedStyle.textDecoration,
+    // Overlay
+    position: "absolute",
+    pointerEvents: "none",
+    whiteSpace: "pre-wrap",
+    top: `${textElement.offsetTop}px`,
+    left: `${textElement.offsetLeft}px`,
+    height: `${textElement.offsetHeight}px`,
+    width: `${textElement.offsetWidth}px`,
+    border: computedStyle.border,
+    padding: computedStyle.padding,
+    margin: computedStyle.margin,
   };
+
+  Object.assign(ghostText.style, styles);
+  return ghostText;
 }
