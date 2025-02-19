@@ -1,27 +1,72 @@
 // content.js
+// Global variables
+let timeout = null;
+let activeTextarea = null;
+let activeGhostText = null;
+let activeSuggestion = null;
+
 document.addEventListener("focusin", async (event) => {
-  // Make sure textarea is focused
   if (event.target.tagName.toLowerCase() !== "textarea") return;
 
-  // Get the textarea value
   const textarea = event.target;
-  const value = textarea.value;
-  const context = []; // TODO: get the context of the textarea
-  // Get the autocomplete suggestions
-  const suggestion = await getAutocompleteSuggestion(value, context);
-  const ghostText = createGhostText(value, suggestion, textarea);
-  textarea.parentElement.appendChild(ghostText);
+  activeTextarea = textarea;
+  const context = null; // TODO: get the context around textarea
+
+  const handleInput = () => handleSuggestion(textarea, context);
+  const handleKeydown = (event) => handleTabPress(event, textarea);
+
+  textarea.addEventListener("input", handleInput);
+  textarea.addEventListener("keydown", handleKeydown);
+  textarea.addEventListener("blur", removeGhostText);
+
+  // Clean up previous listeners when textarea changes
+  textarea.addEventListener("focusout", () => {
+    textarea.removeEventListener("input", handleInput);
+    textarea.removeEventListener("keydown", handleKeydown);
+    textarea.removeEventListener("blur", removeGhostText);
+  });
 });
+
+function removeGhostText() {
+  if (activeGhostText) {
+    activeGhostText.remove();
+    activeGhostText = null;
+  }
+}
+
+async function handleSuggestion(textarea, context) {
+  clearTimeout(timeout);
+  removeGhostText(); // Remove previous ghost text
+  timeout = setTimeout(() => Suggest(textarea, context), 500);
+}
+
+async function Suggest(textarea, context) {
+  const suggestion = await getAutocompleteSuggestion(textarea.value, context);
+  const ghostText = createGhostText(suggestion, textarea);
+  textarea.parentElement.appendChild(ghostText);
+  activeGhostText = ghostText;
+  activeSuggestion = suggestion;
+}
+
+function handleTabPress(event, textarea) {
+  if (event.key === "Tab" && activeSuggestion) {
+    textarea.value = textarea.value + activeSuggestion;
+    activeSuggestion = null;
+    activeGhostText.remove();
+    event.preventDefault();
+  }
+}
 
 async function getAutocompleteSuggestion(value, context) {
   // TODO: connect to an LLM to get the suggestion
-  const suggestion = "Static Suggestion";
+  const suggestion = " Static Suggestion";
   return suggestion;
 }
 
-function createGhostText(text, suggestion, textElement) {
+function createGhostText(suggestion, textElement) {
+  const currText = textElement.value;
   const ghostText = document.createElement("div");
-  ghostText.textContent = text + " " + suggestion;
+  ghostText.textContent = currText + suggestion;
 
   const computedStyle = window.getComputedStyle(textElement);
   const styles = {
