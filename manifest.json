@@ -1,10 +1,16 @@
 {
-  "name": "Hello Extensions",
-  "description": "Base Level Extension",
+  "name": "Autocomplete Extension",
+  "description": "Autocomplete as you type",
   "version": "1.0",
   "manifest_version": 3,
   "action": {
     "default_popup": "hello.html",
     "default_icon": "icon.png"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"]
+    }
+  ]
 }
