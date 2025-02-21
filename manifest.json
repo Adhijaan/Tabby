@@ -12,5 +12,6 @@
       "matches": ["*://*/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "host_permissions": ["https://api.openrouter.ai/*"]
 }
