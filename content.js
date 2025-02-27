@@ -10,7 +10,7 @@ document.addEventListener("focusin", async (event) => {
 
   const textarea = event.target;
   activeTextarea = textarea;
-  resizeObserver.observe(textarea);
+
   const context = null; // TODO: get the context around textarea
 
   const handleInput = () => handleSuggestion(textarea, context);
@@ -19,29 +19,31 @@ document.addEventListener("focusin", async (event) => {
   textarea.addEventListener("input", handleInput);
   textarea.addEventListener("keydown", handleKeydown);
   textarea.addEventListener("blur", removeGhostText);
+  textarea.addEventListener("scroll", syncScroll);
+  resizeObserver.observe(textarea);
 
   // Clean up previous listeners when textarea changes
   textarea.addEventListener("focusout", () => {
     textarea.removeEventListener("input", handleInput);
     textarea.removeEventListener("keydown", handleKeydown);
     textarea.removeEventListener("blur", removeGhostText);
+    textarea.removeEventListener("scroll", syncScroll);
   });
 });
 
 async function handleSuggestion(textarea, context) {
-  removeGhostText();
+  removeGhostText(); // Remove existing suggestion
   if (textarea.value.length === 0) return;
-  console.log("handleSuggestion", textarea.value);
-  clearTimeout(timeout);
-  timeout = setTimeout(() => Suggest(textarea, context), 200);
+  if (timeout) clearTimeout(timeout);
+  setTimeout(Suggest(context), 200);
 }
 
 function handleTabPress(event, textarea) {
   if (event.key === "Tab" && activeSuggestion) {
+    event.preventDefault();
     textarea.value = textarea.value + activeSuggestion;
     activeSuggestion = null;
     removeGhostText();
-    event.preventDefault();
   }
 }
 
@@ -52,16 +54,13 @@ function removeGhostText() {
   }
 }
 
-async function Suggest(textarea, context) {
-  const suggestion = await getAutocompleteSuggestion(textarea.value, context);
-  //   const suggestion = "Static suggestion";
+async function Suggest(context) {
+  //   const suggestion = await getAutocompleteSuggestion(textarea.value, context);
+  const suggestion = " Static suggestion";
   if (!suggestion) return;
-  const ghostText = createGhostText(suggestion, textarea);
-  textarea.parentElement.appendChild(ghostText);
-  activeGhostText = ghostText;
+  createGhostText(suggestion);
+  activeTextarea.parentElement.appendChild(activeGhostText);
   activeSuggestion = suggestion;
-  textarea.addEventListener("scroll", syncScroll);
-  textarea.addEventListener("focusout", () => textarea.removeEventListener("scroll", syncScroll));
 }
 
 async function getAutocompleteSuggestion(value, context) {
@@ -102,13 +101,13 @@ async function getAutocompleteSuggestion(value, context) {
   }
 }
 
-function createGhostText(suggestion, textElement) {
-  const currText = textElement.value;
-  const ghostText = document.createElement("div");
-  ghostText.textContent = currText + suggestion;
+function createGhostText(suggestion) {
+  activeGhostText = document.createElement("div");
+  console.log(`Element ${activeTextarea.value}`);
+  activeGhostText.textContent = activeTextarea.value + suggestion;
+  console.log(`Ghost ${activeGhostText.textContent}`);
 
-  const computedStyle = window.getComputedStyle(textElement);
-  const rect = textElement.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(activeTextarea);
 
   const styles = {
     // Mimic the text
@@ -132,44 +131,45 @@ function createGhostText(suggestion, textElement) {
     // borderColor: "transparent",
     borderColor: "blue", // TODO: remove
     padding: computedStyle.padding,
-    margin: computedStyle.margin,
     boxSizing: computedStyle.boxSizing,
     outline: computedStyle.outline,
     scrollTop: computedStyle.scrollTop,
     scrollLeft: computedStyle.scrollLeft,
   };
   // Assign styles
-  Object.assign(ghostText.style, styles);
+  Object.assign(activeGhostText.style, styles);
   // Update position
-  updateGhostTextPosition(activeTextarea, ghostText);
-  return ghostText;
+  updateGhostTextPosition();
 }
 
 const resizeObserver = new ResizeObserver((entries) => {
   if (activeGhostText && activeTextarea) {
-    updateGhostTextPosition(activeTextarea, activeGhostText);
+    updateGhostTextPosition();
   }
 });
 
-function updateGhostTextPosition(textarea, ghostText) {
-  const rect = textarea.getBoundingClientRect();
-  const computedStyle = window.getComputedStyle(textarea);
-  ghostText.style.top = `${rect.top}px`;
-  ghostText.style.left = `${rect.left}px`;
-  ghostText.style.height = `${
+function updateGhostTextPosition() {
+  if (!activeGhostText) return;
+  const rect = activeTextarea.getBoundingClientRect();
+  const computedStyle = window.getComputedStyle(activeTextarea);
+  activeGhostText.style.top = `${rect.top}px`;
+  activeGhostText.style.left = `${rect.left}px`;
+  activeGhostText.style.height = `${
     rect.height -
     parseFloat(computedStyle.paddingTop) -
     parseFloat(computedStyle.paddingBottom) -
     parseFloat(computedStyle.borderTopWidth) -
     parseFloat(computedStyle.borderBottomWidth)
   }px`;
-  ghostText.style.width = `${
+  activeGhostText.style.width = `${
     rect.width -
     parseFloat(computedStyle.paddingLeft) -
     parseFloat(computedStyle.paddingRight) -
     parseFloat(computedStyle.borderLeftWidth) -
     parseFloat(computedStyle.borderRightWidth)
   }px`;
+  // Align the scrolled text
+  syncScroll();
 }
 
 function syncScroll() {
