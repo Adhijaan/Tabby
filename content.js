@@ -34,18 +34,9 @@ document.addEventListener("focusin", async (event) => {
 async function handleSuggestion(textarea, context) {
   removeGhostText(); // Remove existing suggestion
   if (textarea.value.length === 0) return;
-  // debounce(() => Suggest(context), 200);
   clearTimeout(timeout);
   timeout = setTimeout(() => Suggest(context), 200);
 }
-
-// function debounce(func, delay) {
-//   let timeout;
-//   return function (...args) {
-//     clearTimeout(timeout);
-//     timeout = setTimeout(() => func.apply(this, ...args), delay);
-//   };
-// }
 
 function handleTabPress(event, textarea) {
   if (event.key === "Tab" && activeSuggestion) {
@@ -66,58 +57,23 @@ function removeGhostText() {
   }
 }
 
-async function Suggest(context) {
-  chrome.runtime.sendMessage({ type: "getAutocompletion", value: activeTextarea.value, context }, (response) => {
-    if (response.error) {
-      console.error("Error getting autocomplete suggestion:", response.error);
-      return;
-    }
-    if (!response.suggestion) return;
-    activeSuggestion = response.suggestion;
-    createGhostText(response.suggestion);
-    // Append to the DOM
-    activeTextarea.parentElement.appendChild(activeGhostText);
-    console.log("Adding ghost text");
-  });
+function Suggest(context) {
+  try {
+    chrome.runtime.sendMessage({ type: "getAutocompletion", value: activeTextarea.value, context }, (response) => {
+      if (response.error) {
+        console.error("Error getting autocomplete suggestion:", response.error);
+        return;
+      }
+      if (!response.suggestion) return;
+      activeSuggestion = response.suggestion;
+      createGhostText(response.suggestion);
+      // Append to the DOM
+      activeTextarea.parentElement.appendChild(activeGhostText);
+    });
+  } catch (error) {
+    console.error("Error sending message to background.js", error);
+  }
 }
-
-// async function getAutocompleteSuggestion(value, context) {
-//   try {
-//     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-//       method: "POST",
-//       headers: {
-//         Authorization: `Bearer ${API_KEY}`,
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         model: "mistralai/mistral-small-24b-instruct-2501:free",
-//         messages: [
-//           {
-//             role: "system",
-//             content: `
-//           The user has entered the following text: ${value}
-//           The context of the text is: ${context}
-//           Provide an accurate autocomplete suggestion, matching the context, intended tone, and length of the text.
-//           Nothing more or less. If a starting space is needed, add one. Complete in same language as text.
-//           If it the text is nonsensical, return nothing.
-//           `,
-//           },
-//         ],
-//       }),
-//     });
-
-//     const data = await response.json();
-//     console.log("data", data);
-//     if (data.error) return null;
-//     if (data.choices.length === 0) return null;
-//     if (data.choices[0].message.content === "null") return null; // Nonsensical user input, return nothing
-//     const suggestion = data.choices[0].message.content;
-//     return suggestion;
-//   } catch (error) {
-//     console.error("Error getting autocomplete suggestion:", error);
-//     return null;
-//   }
-// }
 
 function createGhostText(suggestion) {
   activeGhostText = document.createElement("div");
@@ -206,3 +162,14 @@ function syncScroll() {
   //   }`
   // );
 }
+
+// Debug Listener
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === "Debug") {
+    try {
+      console[request.level](...request.message);
+    } catch (error) {
+      console.error("Invalid Debug message from Worker", error);
+    }
+  }
+});

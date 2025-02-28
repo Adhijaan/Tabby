@@ -1,29 +1,37 @@
-"use strict";
+// background.js
+// Imports
+import debugConsole from "./debug.js";
+const DEBUG = false;
 
 // Globals
 const API_KEY = "open router ai api key";
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  switch (request.type) {
-    case "getAutocompletion":
-      // Process synchronously if possible
-      getAutocompleteSuggestion(request.value, request.context)
-        .then((suggestion) => {
-          sendResponse({ suggestion: suggestion });
-        })
-        .catch((error) => {
-          sendResponse({ error: error.message });
-        });
-      return true;
-    default:
-      console.error("Unknown message type", request.type);
-      break;
+  if (DEBUG) debugConsole.log("Received message", request);
+  try {
+    switch (request.type) {
+      case "getAutocompletion":
+        // Process synchronously if possible
+        getAutocompleteSuggestion(request.value, request.context)
+          .then((suggestion) => {
+            sendResponse({ suggestion: suggestion });
+          })
+          .catch((error) => {
+            sendResponse({ error: error.message });
+          });
+        return true;
+      default:
+        if (DEBUG) debugConsole.error("Unknown message type", request.type);
+        break;
+    }
+  } catch (error) {
+    console.error("Error in background.js", error);
   }
 });
 
 async function getAutocompleteSuggestion(value, context) {
   return " Static suggestion"; // For testing
-  console.log("Getting autocomplete suggestion for:", value);
+  if (DEBUG) debugConsole.log("Getting autocomplete suggestion for:", value);
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -49,14 +57,14 @@ async function getAutocompleteSuggestion(value, context) {
     });
 
     const data = await response.json();
-    console.log("data", data);
+    debugConsole.log("data", data);
     if (data.error) return null;
     if (data.choices.length === 0) return null;
     if (data.choices[0].message.content === "null") return null; // Nonsensical user input, return nothing
     const suggestion = data.choices[0].message.content;
     return suggestion;
   } catch (error) {
-    console.error("Error getting autocomplete suggestion:", error);
+    debugConsole.error("Error getting autocomplete suggestion:", error);
     return null;
   }
 }
