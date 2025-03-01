@@ -74,9 +74,17 @@ function Suggest(context) {
 }
 
 function createGhostText(suggestion) {
-  activeGhostText = document.createElement("div");
-  activeGhostText.textContent = activeTextarea.value + suggestion; // Todo: how to suggest between words
+  if (activeGhostText) removeGhostText();
+  if (!activeTextarea) return;
 
+  // Todo: how to suggest between words.
+  const cursorPosition = activeTextarea.selectionStart;
+  const isAtEnd = cursorPosition === activeTextarea.value.length;
+  console.log("Cursor position", cursorPosition, "isAtEnd", isAtEnd);
+  if (!isAtEnd) return;
+
+  activeGhostText = document.createElement("div");
+  activeGhostText.textContent = activeTextarea.value + suggestion;
   const computedStyle = window.getComputedStyle(activeTextarea);
   const styles = {
     // Text appearance
