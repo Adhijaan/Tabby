@@ -67,8 +67,6 @@ function Suggest(context) {
       if (!response.suggestion) return;
       activeSuggestion = response.suggestion;
       createGhostText(response.suggestion);
-      // Append to the DOM
-      activeTextarea.parentElement.appendChild(activeGhostText);
     });
   } catch (error) {
     console.error("Error sending message to background.js", error);
@@ -77,53 +75,60 @@ function Suggest(context) {
 
 function createGhostText(suggestion) {
   activeGhostText = document.createElement("div");
-  // console.log(`Element ${activeTextarea.value}`);
-  activeGhostText.textContent = activeTextarea.value + suggestion;
-  // console.log(`Ghost ${activeGhostText.textContent}`);
+  activeGhostText.textContent = activeTextarea.value + suggestion; // Todo: how to suggest between words
 
   const computedStyle = window.getComputedStyle(activeTextarea);
-
   const styles = {
-    // Mimic the text
+    // Text appearance
     color: computedStyle.color,
     opacity: computedStyle.opacity * 0.5,
-    fontWeight: computedStyle.fontWeight,
-    fontSize: computedStyle.fontSize,
     fontFamily: computedStyle.fontFamily,
-    textDecoration: computedStyle.textDecoration,
+    fontSize: computedStyle.fontSize,
+    fontWeight: computedStyle.fontWeight,
     lineHeight: computedStyle.lineHeight,
     letterSpacing: computedStyle.letterSpacing,
     textAlign: computedStyle.textAlign,
-    textTransform: computedStyle.textTransform,
+    textDecoration: computedStyle.textDecoration,
     textShadow: computedStyle.textShadow,
-    // Overlay
-    overflow: computedStyle.overflow,
+    textTransform: computedStyle.textTransform,
+    textWrapMode: computedStyle.textWrapMode,
+    // whiteSpace: "pre-wrap",
+    whiteSpace: computedStyle.whiteSpace,
+    overflowWrap: computedStyle.overflowWrap,
+    wordBreak: computedStyle.wordBreak,
+
+    // Positioning and dimensions
     position: "absolute",
-    pointerEvents: "none",
-    whiteSpace: "pre-wrap",
-    border: computedStyle.border,
-    // borderColor: "transparent",
-    borderColor: "blue", // TODO: remove
     padding: computedStyle.padding,
     boxSizing: computedStyle.boxSizing,
-    outline: computedStyle.outline,
-    scrollTop: computedStyle.scrollTop,
-    scrollLeft: computedStyle.scrollLeft,
+
+    // Behavior
+    pointerEvents: "none",
+    overflow: computedStyle.overflow,
+
+    // Border
+    border: computedStyle.border,
+    borderColor: "transparent",
   };
+
   // Assign styles
   Object.assign(activeGhostText.style, styles);
   // Update position
   updateGhostTextPosition();
+
+  // Append to the DOM
+  activeTextarea.parentElement.appendChild(activeGhostText);
+
+  // Align the scrolled text
+  syncScroll();
 }
 
 const resizeObserver = new ResizeObserver((entries) => {
-  if (activeGhostText && activeTextarea) {
-    updateGhostTextPosition();
-  }
+  updateGhostTextPosition();
 });
 
 function updateGhostTextPosition() {
-  if (!activeGhostText) return;
+  if (!activeGhostText || !activeTextarea) return;
   const rect = activeTextarea.getBoundingClientRect();
   const computedStyle = window.getComputedStyle(activeTextarea);
   activeGhostText.style.top = `${rect.top}px`;
@@ -142,25 +147,12 @@ function updateGhostTextPosition() {
     parseFloat(computedStyle.borderLeftWidth) -
     parseFloat(computedStyle.borderRightWidth)
   }px`;
-  // Align the scrolled text
-  syncScroll();
 }
 
 function syncScroll() {
-  if (!activeGhostText) return;
-  // console.log(
-  //   `Before ${activeGhostText.scrollTop} ${activeTextarea.scrollTop} ${
-  //     activeGhostText.scrollTop - activeTextarea.scrollTop
-  //   }`
-  // );
-
+  if (!activeGhostText || !activeTextarea) return;
   activeGhostText.scrollTop = activeTextarea.scrollTop;
   activeGhostText.scrollLeft = activeTextarea.scrollLeft;
-  // console.log(
-  //   `After ${activeGhostText.scrollTop} ${activeTextarea.scrollTop} ${
-  //     activeGhostText.scrollTop - activeTextarea.scrollTop
-  //   }`
-  // );
 }
 
 // Debug Listener
