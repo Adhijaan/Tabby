@@ -6,7 +6,8 @@ let activeGhostText = null;
 let activeSuggestion = null;
 
 document.addEventListener("focusin", async (event) => {
-  if (event.target.tagName.toLowerCase() !== "textarea") return;
+  console.log("isvalid box", isValidTextBox(event.target));
+  if (!isValidTextBox(event.target)) return;
 
   const textarea = event.target;
   activeTextarea = textarea;
@@ -23,13 +24,17 @@ document.addEventListener("focusin", async (event) => {
   resizeObserver.observe(textarea);
 
   // Clean up previous listeners when textarea changes
-  textarea.addEventListener("focusout", () => {
+  textarea.addEventListener(
+    "focusout",
+    () => {
     textarea.removeEventListener("input", handleInput);
     textarea.removeEventListener("keydown", handleKeydown);
     textarea.removeEventListener("blur", removeGhostText);
     textarea.removeEventListener("scroll", syncScroll);
     resizeObserver.unobserve(textarea);
-  });
+    },
+    { once: true }
+  );
 });
 
 async function handleSuggestion(textarea, context) {
@@ -164,6 +169,7 @@ function syncScroll() {
   activeGhostText.scrollLeft = activeTextarea.scrollLeft;
 }
 
+// Utils
 // Debug Listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "Debug") {
@@ -174,3 +180,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   }
 });
+
+function isValidTextBox(element) {
+  // Validate the input box
+  // Textarea
+  if (element instanceof HTMLTextAreaElement) {
+    return true;
+  }
+  // Input
+  if (element instanceof HTMLInputElement) {
+    const validTypes = ["text", "search"];
+    return validTypes.includes(element.type.toLowerCase());
+  }
+  return false;
+}
