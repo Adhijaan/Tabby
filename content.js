@@ -28,6 +28,7 @@ document.addEventListener("focusin", async (event) => {
     textarea.removeEventListener("keydown", handleKeydown);
     textarea.removeEventListener("blur", removeGhostText);
     textarea.removeEventListener("scroll", syncScroll);
+    resizeObserver.unobserve(textarea);
   });
 });
 
