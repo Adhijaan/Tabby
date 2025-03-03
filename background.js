@@ -3,9 +3,7 @@
 import debugConsole from "./debug.js";
 const DEBUG = false;
 
-// Globals
-const API_KEY = "open router ai api key";
-
+// Event listeners
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (DEBUG) debugConsole.log("Received message", request);
   try {
@@ -30,7 +28,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function getAutocompleteSuggestion(value, context) {
-  return " Static suggestion"; // For testing
+  //   return "Static suggestion"; // For testing
+  //   const settings = await chrome.storage.sync.get();
+  const settings = {
+    apiKey: "api key here",
+  };
+  debugConsole.log("Settings", settings);
+
+  if (!settings.apiKey) {
+    throw new Error("API key not found");
+  }
+  const API_KEY = settings.apiKey;
+
   if (DEBUG) debugConsole.log("Getting autocomplete suggestion for:", value);
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -40,7 +49,8 @@ async function getAutocompleteSuggestion(value, context) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "mistralai/mistral-small-24b-instruct-2501:free",
+        // model: "mistralai/mistral-small-24b-instruct-2501:free",
+        model: "google/gemini-2.0-flash-exp:free",
         messages: [
           {
             role: "system",
