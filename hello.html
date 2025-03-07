@@ -109,7 +109,8 @@
         font-weight: 500;
       }
 
-      input[type="text"] {
+      input[type="text"],
+      input[type="password"] {
         padding: 10px;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -118,7 +119,8 @@
         width: 80%;
       }
 
-      input[type="text"]:focus {
+      input[type="text"]:focus,
+      input[type="password"]:focus {
         border-color: #ff9800;
         outline: none;
       }
@@ -186,7 +188,8 @@
         flex: 1;
       }
     </style>
-    <script defer src="options.js" type="module"></script>
+    <!-- Changed script loading to be more reliable -->
+    <script src="options.js" type="module" defer></script>
   </head>
   <body>
     <div class="container">
