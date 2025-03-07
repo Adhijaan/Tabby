@@ -29,10 +29,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function getAutocompleteSuggestion(value, context) {
   //   return "Static suggestion"; // For testing
+
   const settings = await chrome.storage.local.get();
-  //   const settings = {
-  //     apiKey: "api key here",
-  //   };
+
   contentConsole.log("Settings", settings);
 
   if (!settings.apiKey) {
@@ -49,15 +48,18 @@ async function getAutocompleteSuggestion(value, context) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // model: "mistralai/mistral-small-24b-instruct-2501:free",
-        model: "google/gemini-2.0-flash-exp:free",
+        models: [
+          "meta-llama/llama-3.1-8b-instruct:free",
+          "google/gemini-2.0-flash-exp:free",
+          "mistralai/mistral-small-24b-instruct-2501:free",
+        ],
         messages: [
           {
             role: "system",
             content: `
             The user has entered the following text: ${value}
             The context of the text is: ${context}
-            Provide only an accurate autocomplete suggestion, matching the context, intended tone, and the jist of the text.
+            Provide only the accurate autocomplete suggestion, matching the context, intended tone, and the jist of the text without the previous text.
             Nothing more or less. If a starting space is needed, add one. Complete in same language as text.
             If it the text is nonsensical, return nothing.
             `,

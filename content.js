@@ -6,6 +6,10 @@ let activeGhostText = null;
 let activeSuggestion = null;
 
 document.addEventListener("focusin", async (event) => {
+  chrome.storage.local.get(["active"], (result) => {
+    if (!result.active) return;
+  });
+
   console.log("isvalid box", isValidTextBox(event.target));
   if (!isValidTextBox(event.target)) return;
 
@@ -27,11 +31,11 @@ document.addEventListener("focusin", async (event) => {
   textarea.addEventListener(
     "focusout",
     () => {
-    textarea.removeEventListener("input", handleInput);
-    textarea.removeEventListener("keydown", handleKeydown);
-    textarea.removeEventListener("blur", removeGhostText);
-    textarea.removeEventListener("scroll", syncScroll);
-    resizeObserver.unobserve(textarea);
+      textarea.removeEventListener("input", handleInput);
+      textarea.removeEventListener("keydown", handleKeydown);
+      textarea.removeEventListener("blur", removeGhostText);
+      textarea.removeEventListener("scroll", syncScroll);
+      resizeObserver.unobserve(textarea);
     },
     { once: true }
   );
@@ -114,6 +118,7 @@ function createGhostText(suggestion) {
     // Positioning and dimensions
     position: "absolute",
     padding: computedStyle.padding,
+    border: computedStyle.border,
     boxSizing: computedStyle.boxSizing,
 
     // Behavior
@@ -122,7 +127,8 @@ function createGhostText(suggestion) {
 
     // Border
     border: computedStyle.border,
-    borderColor: "transparent",
+    // borderColor: "transparent",
+    borderColor: "solid",
   };
 
   // Assign styles
