@@ -1,5 +1,6 @@
 // debug.js
 export default class debugConsole {
+  active = true;
   static log(...message) {
     this.#console_out("log", ...message);
   }
@@ -13,6 +14,8 @@ export default class debugConsole {
     this.#console_out("info", ...message);
   }
   static async #console_out(level, ...message) {
+    if (!this.active) return;
+
     // Log in the background console
     console[level](...message);
 

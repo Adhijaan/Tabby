@@ -1,4 +1,5 @@
 import contentConsole from "./debug.js";
+contentConsole.active = false;
 // Wait for DOM to be fully loaded before accessing elements
 document.addEventListener("DOMContentLoaded", function () {
   contentConsole.log("Tabby options fully loaded");

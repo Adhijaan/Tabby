@@ -1,11 +1,11 @@
 // background.js
 // Imports
-import debugConsole from "./debug.js";
-const DEBUG = false;
+import contentConsole from "./debug.js";
+contentConsole.active = true;
 
 // Event listeners
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (DEBUG) debugConsole.log("Received message", request);
+  contentConsole.log("Received message", request);
   try {
     switch (request.type) {
       case "getAutocompletion":
@@ -19,7 +19,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           });
         return true;
       default:
-        if (DEBUG) debugConsole.error("Unknown message type", request.type);
+        contentConsole.error("Unknown message type", request.type);
         break;
     }
   } catch (error) {
@@ -29,18 +29,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function getAutocompleteSuggestion(value, context) {
   //   return "Static suggestion"; // For testing
-  //   const settings = await chrome.storage.sync.get();
-  const settings = {
-    apiKey: "api key here",
-  };
-  debugConsole.log("Settings", settings);
+  const settings = await chrome.storage.local.get();
+  //   const settings = {
+  //     apiKey: "api key here",
+  //   };
+  contentConsole.log("Settings", settings);
 
   if (!settings.apiKey) {
     throw new Error("API key not found");
   }
   const API_KEY = settings.apiKey;
 
-  if (DEBUG) debugConsole.log("Getting autocomplete suggestion for:", value);
+  contentConsole.log("Getting autocomplete suggestion for:", value);
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -67,14 +67,14 @@ async function getAutocompleteSuggestion(value, context) {
     });
 
     const data = await response.json();
-    debugConsole.log("data", data);
+    contentConsole.log("data", data);
     if (data.error) return null;
     if (data.choices.length === 0) return null;
     if (data.choices[0].message.content === "null") return null; // Nonsensical user input, return nothing
     const suggestion = data.choices[0].message.content;
     return suggestion;
   } catch (error) {
-    debugConsole.error("Error getting autocomplete suggestion:", error);
+    contentConsole.error("Error getting autocomplete suggestion:", error);
     return null;
   }
 }
